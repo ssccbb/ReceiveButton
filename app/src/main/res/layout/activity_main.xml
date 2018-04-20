@@ -1,15 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.sung.receivebutton.MainActivity">
 
+   <TextView
+       android:layout_alignTop="@+id/btn"
+       android:text="点按按钮更新状态"
+       android:layout_centerHorizontal="true"
+       android:layout_marginTop="-30dp"
+       android:textColor="#28000000"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content" />
+
    <com.sung.receivebutton.ReceiveSelectButton
        android:id="@+id/btn"
+       android:layout_centerInParent="true"
        app:cardCornerRadius="25dp"
        android:layout_width="200dp"
        android:layout_height="50dp" />
 
-</android.support.constraint.ConstraintLayout>
+   <TextView
+       android:id="@+id/start"
+       android:layout_below="@+id/btn"
+       android:layout_centerHorizontal="true"
+       android:layout_marginTop="10dp"
+       android:background="?android:selectableItemBackground"
+       android:padding="10dp"
+       android:textColor="@color/colorAccent"
+       android:text="start countting"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content" />
+
+</RelativeLayout>

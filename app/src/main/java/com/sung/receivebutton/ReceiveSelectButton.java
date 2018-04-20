@@ -5,10 +5,12 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.CardView;
 import android.text.TextPaint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 
 /**
@@ -59,7 +61,7 @@ public class ReceiveSelectButton extends CardView {
     /**
      * 当前进度/总进度
      * */
-    private float current_progress = 50;
+    private float current_progress = 1;
     private float total_progress = 100;
     /**
      * 是否圆角
@@ -77,6 +79,24 @@ public class ReceiveSelectButton extends CardView {
     private int width = 0;
     private int height = 0;
     private RectF mRectF;
+
+    private OnProgressComplete onProgressComplete;
+
+    private boolean countTime = false;
+    private android.os.Handler countHandler = new android.os.Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            current_progress = current_progress + 1;
+            postInvalidate();
+            if (current_progress >= total_progress){
+                countTime = false;
+                if (onProgressComplete != null){
+                    onProgressComplete.onFullProgress();
+                }
+            }
+            Log.e("progress count", "counting: "+current_progress );
+        }
+    };
 
     public ReceiveSelectButton(Context context) {
         super(context);
@@ -128,62 +148,35 @@ public class ReceiveSelectButton extends CardView {
 
         int dynamic_progress = (int) (width / total_progress * current_progress);
 
-        if (as_corner){
-            //背景底色
-            canvas.drawRoundRect(mRectF,height/2,height/2,basePaint);
-            //未完成
-            if (mode == SELECT_STATUS_UNFINISH){
-                text = "未完成";
-            }
-            //进行中
-            if (mode == SELECT_STATUS_CONTINUE){
-                text = "进行中";
-                textPaint.setColor(Color.parseColor("#f19a5a"));
-                frontPaint.setColor(Color.parseColor("#7ef19a5a"));
-                canvas.drawRoundRect(mRectF,height/2,height/2,frontPaint);
-            }
-            //已完成
-            if (mode == SELECT_STATUS_FINISH){
-                text = "已完成";
-            }
-            //等待中
-            if (mode == SELECT_STATUS_WAIT){
-                text = "等待中";
-            }
-            //可领取
-            if (mode == SELECT_STATUS_AVALIABLE){
-                text = "可领取";
-                text_color = "#ffffff";
-                canvas.drawRoundRect(mRectF,height/2,height/2,frontPaint);
-            }
-        }else {
-            //背景底色
-            canvas.drawRect(mRectF,basePaint);
-            //未完成
-            if (mode == SELECT_STATUS_UNFINISH){
-                text = "未完成";
-            }
-            //进行中
-            if (mode == SELECT_STATUS_CONTINUE){
-                text = "进行中";
-                textPaint.setColor(Color.parseColor("#f19a5a"));
-                frontPaint.setColor(Color.parseColor("#7ef19a5a"));
-                canvas.drawRect(new RectF(0,0,dynamic_progress,height),frontPaint);
-            }
-            //已完成
-            if (mode == SELECT_STATUS_FINISH){
-                text = "已完成";
-            }
-            //等待中
-            if (mode == SELECT_STATUS_WAIT){
-                text = "等待中";
-            }
-            //可领取
-            if (mode == SELECT_STATUS_AVALIABLE){
-                text = "可领取";
-                text_color = "#ffffff";
-                canvas.drawRect(mRectF,frontPaint);
-            }
+        //背景底色
+        canvas.drawRect(mRectF,basePaint);
+        //未完成
+        if (mode == SELECT_STATUS_UNFINISH){
+            text = "未完成";
+            textPaint.setColor(Color.parseColor("#28000000"));
+        }
+        //进行中
+        if (mode == SELECT_STATUS_CONTINUE){
+            text = "进行中";
+            textPaint.setColor(Color.parseColor("#f19a5a"));
+            frontPaint.setColor(Color.parseColor("#7ef19a5a"));
+            canvas.drawRect(new RectF(0,0,dynamic_progress,height),frontPaint);
+        }
+        //已完成
+        if (mode == SELECT_STATUS_FINISH){
+            text = "已完成";
+            textPaint.setColor(Color.parseColor("#28000000"));
+        }
+        //等待中
+        if (mode == SELECT_STATUS_WAIT){
+            text = "等待中";
+            textPaint.setColor(Color.parseColor("#28000000"));
+        }
+        //可领取
+        if (mode == SELECT_STATUS_AVALIABLE){
+            text = "可领取";
+            text_color = "#ffffff";
+            canvas.drawRect(mRectF,frontPaint);
         }
 
         // 计算Baseline绘制的起点X轴坐标 ，计算方式：画布宽度的一半 - 文字宽度的一半
@@ -199,6 +192,7 @@ public class ReceiveSelectButton extends CardView {
      * */
     public void updateStatus(int status){
         this.mode = status;
+        stopCountTime();
         postInvalidate();
     }
 
@@ -216,5 +210,71 @@ public class ReceiveSelectButton extends CardView {
     public void setCurrentProgress(float current_progress) {
         this.current_progress = current_progress;
         postInvalidate();
+    }
+
+    public void setTotalProgress(float total_progress){
+        this.total_progress = total_progress;
+        postInvalidate();
+    }
+
+    public int getStatus() {
+        return mode;
+    }
+
+    public boolean isCountting(){
+        return countTime;
+    }
+
+    /**
+     * 开始走进度条
+     * */
+    public void startCountTime(){
+        countTime = true;
+        new Thread(new TimerCountRunnable()).start();
+    }
+
+    public void stopCountTime(){
+        countTime = false;
+        if (countHandler != null){
+            countHandler.removeCallbacksAndMessages(null);
+        }
+        if (onProgressComplete != null){
+            onProgressComplete.onStopProgress();
+        }
+    }
+
+    class TimerCountRunnable implements Runnable {
+        @Override
+        public void run() {
+            while (countTime){
+                try {
+                    Thread.sleep(1000);
+                    if (countHandler != null)
+                        countHandler.sendEmptyMessage(0);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+//                    Log.e("InterruptedException", "run: "+e.toString() );
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        countTime = false;
+        if (countHandler != null){
+            countHandler.removeCallbacksAndMessages(null);
+            countHandler = null;
+        }
+    }
+
+    public interface OnProgressComplete{
+        void onFullProgress();
+        void onStopProgress();
+    }
+
+    public void addOnProgressCompleteListener(OnProgressComplete onProgressComplete){
+        this.onProgressComplete = onProgressComplete;
     }
 }
