@@ -61,7 +61,7 @@ public class ReceiveSelectButton extends CardView {
     /**
      * 当前进度/总进度
      * */
-    private float current_progress = 1;
+    private float current_progress = 0;
     private float total_progress = 100;
     /**
      * 是否圆角
